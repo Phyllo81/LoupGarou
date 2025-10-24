@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -47,6 +48,8 @@ public class PlayerInteractListener implements Listener {
 
         if(it.getType().equals(Material.CHEST) && it.getItemMeta().getDisplayName().equalsIgnoreCase("§6§lRôles")) {
 
+            e.setCancelled(true);
+
             if(!p.hasPermission("loupgarou.admin")) return;
 
             guiRole(p);
@@ -54,6 +57,8 @@ public class PlayerInteractListener implements Listener {
             p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 1f, 1.2f);
 
         } else if(it.getType() == Material.GOLD_NUGGET && it.getItemMeta().getDisplayName().equalsIgnoreCase("§2§lStart")) {
+
+            e.setCancelled(true);
 
             if(!p.hasPermission("loupgarou.admin")) return;
 
@@ -321,17 +326,11 @@ public class PlayerInteractListener implements Listener {
     }
 
     @EventHandler
-    public void onBlockPlace(BlockPlaceEvent e) {
+    public void onFoodLevelChange(FoodLevelChangeEvent e) {
 
-        Player p = e.getPlayer();
+        e.setCancelled(true);
 
-        Block b = e.getBlockPlaced();
-
-        if(b.getType() == Material.CHEST && p.getItemInHand().getItemMeta().getDisplayName().equalsIgnoreCase("§6§lRôles")) {
-
-            e.setCancelled(true);
-
-        }
+        e.setFoodLevel(20);
 
     }
 

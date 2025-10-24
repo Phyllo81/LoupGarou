@@ -108,8 +108,6 @@ public class JoinListener implements Listener{
 
 			}
 
-			p.setPlayerListHeaderFooter("§4§lLoup-Garou\n", "\n§8Produit par §e§lLeomelki§8, §e§lShytoos §8& §e§lPhyllo_");
-
 		}else if(e.getStatus() == Status.DECLINED || e.getStatus() == Status.FAILED_DOWNLOAD)
 			e.getPlayer().kickPlayer(MainLg.getPrefix()+"§cIl vous faut le resourcepack pour jouer ! ("+e.getStatus()+")");
 	}
