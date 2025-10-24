@@ -17,6 +17,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -649,6 +651,12 @@ public class LGGame implements Listener{
 				team.sendPacket(lgp.getPlayer());
 				LGPlayer.thePlayer(lgp.getPlayer()).join(MainLg.getInstance().getCurrentGame());
 			}
+
+		for(Player p : Bukkit.getOnlinePlayers())
+			Bukkit.getPluginManager().callEvent(new PlayerQuitEvent(p, "joinall"));
+		for(Player p : Bukkit.getOnlinePlayers())
+			Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(p, "joinall"));
+
 		//A remettre pour activer le démarrage automatique
 	/*	wait(30, ()->{
 			for(LGPlayer lgp : getInGame())
