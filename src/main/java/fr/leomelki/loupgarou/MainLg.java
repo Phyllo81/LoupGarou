@@ -2,10 +2,9 @@ package fr.leomelki.loupgarou;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 
 import fr.leomelki.loupgarou.listeners.*;
 import org.bukkit.Bukkit;
@@ -208,12 +207,14 @@ public class MainLg extends JavaPlugin{
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		if(label.equalsIgnoreCase("lg")) {
-			if(!sender.hasPermission("loupgarou.admin")) {
-				sender.sendMessage(prefix+"§4Erreur: Vous n'avez pas la permission...");
-				return true;
-			}
 			if(args.length >= 1) {
 				if(args[0].equalsIgnoreCase("addspawn")) {
+
+					if(!sender.hasPermission("loupgarou.admin")) {
+						sender.sendMessage(prefix+"§4Erreur: Vous n'avez pas la permission...");
+						return true;
+					}
+
 					Player player = (Player)sender;
 					Location loc = player.getLocation();
 					List<Object> list = (List<Object>) getConfig().getList("spawns");
@@ -223,6 +224,12 @@ public class MainLg extends JavaPlugin{
 					sender.sendMessage(prefix+"§aLa position a bien été ajoutée !");
 					return true;
 				}else if(args[0].equalsIgnoreCase("end")) {
+
+					if(!sender.hasPermission("loupgarou.admin")) {
+						sender.sendMessage(prefix+"§4Erreur: Vous n'avez pas la permission...");
+						return true;
+					}
+
 					if(args.length != 2) {
 						sender.sendMessage("§4Utilisation : §c/lg end <pseudo>");
 						return true;
@@ -240,8 +247,19 @@ public class MainLg extends JavaPlugin{
 					game.cancelWait();
 					game.endGame(LGWinType.EQUAL);
 					game.broadcastMessage("§cLa partie a été arrêtée de force !");
+
+					for(Player p : Bukkit.getOnlinePlayers())
+						Bukkit.getPluginManager().callEvent(new PlayerQuitEvent(p, "joinall"));
+					for(Player p : Bukkit.getOnlinePlayers())
+						Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(p, "joinall"));
 					return true;
 				}else if(args[0].equalsIgnoreCase("start")) {
+
+					if(!sender.hasPermission("loupgarou.admin")) {
+						sender.sendMessage(prefix+"§4Erreur: Vous n'avez pas la permission...");
+						return true;
+					}
+
 					if(args.length < 2) {
 						sender.sendMessage("§4Utilisation : §c/lg start <pseudo>");
 						return true;
@@ -265,23 +283,47 @@ public class MainLg extends JavaPlugin{
 					lgp.getGame().updateStart();
 					return true;
 				}else if(args[0].equalsIgnoreCase("reloadconfig")) {
+
+					if(!sender.hasPermission("loupgarou.admin")) {
+						sender.sendMessage(prefix+"§4Erreur: Vous n'avez pas la permission...");
+						return true;
+					}
+
 					sender.sendMessage("§aVous avez bien reload la config !");
 					sender.sendMessage("§7§oSi vous avez changé les rôles, écriver §8§o/lg joinall§7§o !");
 					loadConfig();
 					return true;
 				}else if(args[0].equalsIgnoreCase("joinall")) {
+
+					if(!sender.hasPermission("loupgarou.admin")) {
+						sender.sendMessage(prefix+"§4Erreur: Vous n'avez pas la permission...");
+						return true;
+					}
+
 					for(Player p : Bukkit.getOnlinePlayers())
 						Bukkit.getPluginManager().callEvent(new PlayerQuitEvent(p, "joinall"));
 					for(Player p : Bukkit.getOnlinePlayers())
 						Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(p, "joinall"));
 					return true;
 				}else if(args[0].equalsIgnoreCase("reloadPacks")) {
+
+					if(!sender.hasPermission("loupgarou.admin")) {
+						sender.sendMessage(prefix+"§4Erreur: Vous n'avez pas la permission...");
+						return true;
+					}
+
 					for(Player p : Bukkit.getOnlinePlayers())
 						Bukkit.getPluginManager().callEvent(new PlayerQuitEvent(p, "reloadPacks"));
 					for(Player p : Bukkit.getOnlinePlayers())
 						Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(p, "reloadPacks"));
 					return true;
 				}else if(args[0].equalsIgnoreCase("nextNight")) {
+
+					if(!sender.hasPermission("loupgarou.admin")) {
+						sender.sendMessage(prefix+"§4Erreur: Vous n'avez pas la permission...");
+						return true;
+					}
+
 					sender.sendMessage("§aVous êtes passé à la prochaine nuit");
 					if(getCurrentGame() != null) {
 						getCurrentGame().broadcastMessage("§2§lLe passage à la prochaine nuit a été forcé !");
@@ -292,6 +334,12 @@ public class MainLg extends JavaPlugin{
 					}
 					return true;
 				}else if(args[0].equalsIgnoreCase("nextDay")) {
+
+					if(!sender.hasPermission("loupgarou.admin")) {
+						sender.sendMessage(prefix+"§4Erreur: Vous n'avez pas la permission...");
+						return true;
+					}
+
 					sender.sendMessage("§aVous êtes passé à la prochaine journée");
 					if(getCurrentGame() != null) {
 						getCurrentGame().broadcastMessage("§2§lLe passage à la prochaine journée a été forcé !");
@@ -302,6 +350,12 @@ public class MainLg extends JavaPlugin{
 					}
 					return true;
 				}else if(args[0].equalsIgnoreCase("roles")) {
+
+					if(!sender.hasPermission("loupgarou.admin")) {
+						sender.sendMessage(prefix+"§4Erreur: Vous n'avez pas la permission...");
+						return true;
+					}
+
 					if(args.length == 1 || args[1].equalsIgnoreCase("list")) {
 						sender.sendMessage(prefix+"§6Voici la liste des rôles:");
 						int index = 0;
@@ -353,10 +407,91 @@ public class MainLg extends JavaPlugin{
 						}
 					}
 					return true;
+				} else if(args[0].equalsIgnoreCase("info")) {
+
+					if(args.length == 2) {
+
+						if(getRoles().containsKey(args[1])) {
+
+							String roleName = args[1];
+
+							if(sender instanceof Player) {
+
+								Player p = (Player) sender;
+
+								String className = "fr.leomelki.loupgarou.roles.R" + roleName;
+
+								LGPlayer lgp = LGPlayer.thePlayer(p);
+
+								if(lgp.getGame() == null) {
+
+									sender.sendMessage("§4Erreur : §cTu n'es pas dans une partie.");
+
+									return true;
+
+								}
+
+								try {
+
+									Class<?> clazz = Class.forName(className);
+
+									Object instance = clazz.getDeclaredConstructor(LGGame.class).newInstance(lgp.getGame());
+
+									Method methodRoleName = clazz.getMethod("getName");
+									Object resultRoleName = methodRoleName.invoke(instance);
+
+									Method methodDesc = clazz.getMethod("getDescription");
+									Object resultDesc = methodDesc.invoke(instance);
+
+									sender.sendMessage("§1\n§6Rôles : §r" + resultRoleName + "\n§6Description : §r" + resultDesc + "\n§2 ");
+
+									return true;
+
+								} catch(ClassNotFoundException e) {
+
+									throw new RuntimeException(e);
+
+								} catch(InvocationTargetException e) {
+
+									throw new RuntimeException(e);
+
+								} catch(InstantiationException e) {
+
+									throw new RuntimeException(e);
+
+								} catch(IllegalAccessException e) {
+
+									throw new RuntimeException(e);
+
+								} catch(NoSuchMethodException e) {
+
+									throw new RuntimeException(e);
+
+								}
+
+							} else {
+
+								sender.sendMessage(prefix+"§4Erreur: §cSeul un joueur peut utiliser cette commande.");
+
+							}
+
+                        } else {
+
+							sender.sendMessage(prefix+"§4Erreur: §cCe rôle n'existe pas.");
+
+						}
+
+					} else {
+
+						sender.sendMessage(prefix+"§4Erreur: §cCommande incorrecte.");
+						sender.sendMessage(prefix+"§4Essayez §c/lg info <role_name>");
+
+					}
+
 				}
 			}
 			sender.sendMessage(prefix+"§4Erreur: §cCommande incorrecte.");
-			sender.sendMessage(prefix+"§4Essayez /lg §caddSpawn/end/start/nextNight/nextDay/reloadConfig/roles/reloadPacks/joinAll");
+			sender.sendMessage(prefix+"§4Essayez /lg §caddSpawn/end/start/nextNight/nextDay/reloadConfig/roles/reloadPacks/joinAll/info");
 			return true;
 		}
 		return false;
@@ -374,8 +509,12 @@ public class MainLg extends JavaPlugin{
 					return getStartingList(args[2], getRoles().keySet().toArray(new String[getRoles().size()]));
 				else if(args.length == 4)
 					return Arrays.asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+
+			if(args[0].equalsIgnoreCase("info"))
+				if(args.length == 2)
+					return getStartingList(args[1], getRoles().keySet().toArray(new String[getRoles().size()]));
 		}else if(args.length == 1)
-			return getStartingList(args[0], "addSpawn", "end", "start", "nextNight", "nextDay", "reloadConfig", "roles", "joinAll", "reloadPacks");
+			return getStartingList(args[0], "addSpawn", "end", "start", "nextNight", "nextDay", "reloadConfig", "roles", "joinAll", "reloadPacks", "info");
 		return new ArrayList<String>(0);
 	}
 	private List<String> getStartingList(String startsWith, String... list){
