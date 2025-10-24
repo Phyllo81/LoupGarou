@@ -3,6 +3,10 @@ version: 1.1.0
 description: Permet de jouer au jeu du loup garou
 main: fr.leomelki.loupgarou.MainLg
 depend: [ProtocolLib]
+authors:
+  - Leomelki
+  - Shytoos
+  - Phyllo_
 api-version: 1.13
 commands:
   lg:

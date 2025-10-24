@@ -272,8 +272,10 @@ public class LGGame implements Listener{
 		if(!isStarted())
 			if(inGame.size() == maxPlayers) {//Il faut que la partie soit totalement remplie pour qu'elle démarre car sinon, tous les rôles ne seraient pas distribués
 				for(LGPlayer lgp : getInGame()) {
-					CustomScoreboard scoreboard = new CustomScoreboard("§7"/*[§9Loup-Garou§7]*/, lgp);
-					scoreboard.getLine(0).setDisplayName("§6La partie va démarrer...");
+					// CustomScoreboard scoreboard = new CustomScoreboard("§7"/*[§9Loup-Garou§7]*/, lgp);
+					// scoreboard.getLine(0).setDisplayName("§6La partie va démarrer...");
+
+					CustomScoreboard scoreboard = new CustomScoreboard("§f§lRôles de la partie", lgp);
 					lgp.setScoreboard(scoreboard);
 				}
 				if(startingTask == null) {
@@ -314,11 +316,11 @@ public class LGGame implements Listener{
 			placements.put(lgp.getPlace(), lgp);
 			p.teleport(new Location(p.getWorld(), location.get(0)+0.5, location.get(1), location.get(2)+0.5, location.get(3).floatValue(), location.get(4).floatValue()));
 			WrapperPlayServerUpdateHealth update = new WrapperPlayServerUpdateHealth();
-			update.setFood(6);
+			update.setFood(20);
 			update.setFoodSaturation(1);
 			update.setHealth(20);
 			update.sendPacket(p);
-			lgp.getScoreboard().getLine(0).setDisplayName("§6Attribution des rôles...");
+			// lgp.getScoreboard().getLine(0).setDisplayName("§6Attribution des rôles...");
 		}
 		
 		try {
@@ -342,8 +344,8 @@ public class LGGame implements Listener{
 				}
 				if(timeLeft == 5*2-1) {
 					for(LGPlayer lgp : getInGame()) {
-						lgp.sendMessage("§8Plugin développé par : §e§lLeomelki§8.\n§8Projet organisé par : §e§lShytoos§8.\n");
-						lgp.sendTitle("", "§8§8Plugin LoupGarou par §e§lLeomelki§8 & §e§lShytoos", 40);
+						lgp.sendMessage("§8Plugin développé par : §e§lLeomelki§8.\n§8Projet organisé par : §e§lShytoos§8.\n§8Plugin modifié par : §e§lPhyllo_§8.");
+						// lgp.sendTitle("", "§8§8Plugin LoupGarou par §e§lLeomelki§8 & §e§lShytoos", 40);
 						lgp.getPlayer().getInventory().clear();
 						lgp.getPlayer().updateInventory();
 					}
@@ -412,7 +414,8 @@ public class LGGame implements Listener{
 					lgp.getScoreboard().getLine(i).delete();
 			}else
 				for(LGPlayer lgp : getInGame())
-					lgp.getScoreboard().getLine(i).setDisplayName("§e"+role.getNumber()+" §6- §e"+role.getRole().getName().replace("§l", ""));
+					// lgp.getScoreboard().getLine(i).setDisplayName("§e"+role.getNumber()+" §6- §e"+role.getRole().getName().replace("§l", ""));
+					lgp.getScoreboard().getLine(i).setDisplayName("§l❘ §r"+role.getRole().getName().replace("§l", "")+" §8- §7"+role.getNumber());
 		}
 		for(int i = 15;i>=roles.size();i--)
 			for(LGPlayer lgp : getInGame())

@@ -7,7 +7,7 @@ import fr.leomelki.loupgarou.classes.LGPlayer;
 import fr.leomelki.loupgarou.classes.LGVote;
 import lombok.Getter;
 
-public class LGVoteLeaderChange extends LGEvent{
+public class LGVoteLeaderChange extends LGEvent {
 
 	public LGVoteLeaderChange(LGGame game, LGVote vote, ArrayList<LGPlayer> latest, ArrayList<LGPlayer> now) {
 		super(game);

@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -11,6 +12,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent.Status;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffectType;
 
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
@@ -45,13 +48,32 @@ public class JoinListener implements Listener{
 				team.sendPacket(p);
 				myTeam.sendPacket(player);
 			}
-		p.setFoodLevel(6);
+		p.setFoodLevel(20);
 		if(e.getJoinMessage() == null || !e.getJoinMessage().equals("joinall"))
 			p.getPlayer().setResourcePack("http://leomelki.fr/mcgames/ressourcepacks/v32/loup_garou.zip");
 		else {
 			LGPlayer lgp = LGPlayer.thePlayer(e.getPlayer());
 			lgp.showView();
 			lgp.join(MainLg.getInstance().getCurrentGame());
+
+			if(p.hasPermission("loupgarou.admin")) {
+
+				ItemStack role = new ItemStack(Material.CHEST);
+				ItemMeta roleM = role.getItemMeta();
+				roleM.setDisplayName("§6§lRôles");
+				role.setItemMeta(roleM);
+
+				p.getInventory().setItem(3, role);
+
+				ItemStack start = new ItemStack(Material.GOLD_NUGGET);
+				ItemMeta startM = start.getItemMeta();
+				startM.setDisplayName("§2§lStart");
+				start.setItemMeta(startM);
+
+				p.getInventory().setItem(5, start);
+
+			}
+
 		}
 		if(noSpec)
 			p.setGameMode(GameMode.ADVENTURE);
@@ -67,6 +89,27 @@ public class JoinListener implements Listener{
 			LGPlayer lgp = LGPlayer.thePlayer(p);
 			lgp.showView();
 			lgp.join(MainLg.getInstance().getCurrentGame());
+
+			if(p.hasPermission("loupgarou.admin")) {
+
+				ItemStack role = new ItemStack(Material.CHEST);
+				ItemMeta roleM = role.getItemMeta();
+				roleM.setDisplayName("§6§lRôles");
+				role.setItemMeta(roleM);
+
+				p.getInventory().setItem(3, role);
+
+				ItemStack start = new ItemStack(Material.GOLD_NUGGET);
+				ItemMeta startM = start.getItemMeta();
+				startM.setDisplayName("§2§lStart");
+				start.setItemMeta(startM);
+
+				p.getInventory().setItem(5, start);
+
+			}
+
+			p.setPlayerListHeaderFooter("§4§lLoup-Garou\n", "\n§8Produit par §e§lLeomelki§8, §e§lShytoos §8& §e§lPhyllo_");
+
 		}else if(e.getStatus() == Status.DECLINED || e.getStatus() == Status.FAILED_DOWNLOAD)
 			e.getPlayer().kickPlayer(MainLg.getPrefix()+"§cIl vous faut le resourcepack pour jouer ! ("+e.getStatus()+")");
 	}

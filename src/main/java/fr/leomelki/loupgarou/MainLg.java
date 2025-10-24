@@ -1,6 +1,5 @@
 package fr.leomelki.loupgarou;
 
-
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -8,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import fr.leomelki.loupgarou.listeners.*;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -46,11 +46,6 @@ import fr.leomelki.loupgarou.classes.LGPlayer;
 import fr.leomelki.loupgarou.classes.LGWinType;
 import fr.leomelki.loupgarou.events.LGSkinLoadEvent;
 import fr.leomelki.loupgarou.events.LGUpdatePrefixEvent;
-import fr.leomelki.loupgarou.listeners.CancelListener;
-import fr.leomelki.loupgarou.listeners.ChatListener;
-import fr.leomelki.loupgarou.listeners.JoinListener;
-import fr.leomelki.loupgarou.listeners.LoupGarouListener;
-import fr.leomelki.loupgarou.listeners.VoteListener;
 import fr.leomelki.loupgarou.roles.RAnge;
 import fr.leomelki.loupgarou.roles.RAssassin;
 import fr.leomelki.loupgarou.roles.RBouffon;
@@ -81,7 +76,6 @@ import fr.leomelki.loupgarou.roles.RVampire;
 import fr.leomelki.loupgarou.roles.RVillageois;
 import fr.leomelki.loupgarou.roles.RVoyante;
 import fr.leomelki.loupgarou.roles.Role;
-import fr.leomelki.loupgarou.utils.VariousUtils;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -109,6 +103,7 @@ public class MainLg extends JavaPlugin{
 		Bukkit.getPluginManager().registerEvents(new VoteListener(), this);
 		Bukkit.getPluginManager().registerEvents(new ChatListener(), this);
 		Bukkit.getPluginManager().registerEvents(new LoupGarouListener(), this);
+		Bukkit.getPluginManager().registerEvents(new PlayerInteractListener(roles), this);
 		
 		for(Player player : Bukkit.getOnlinePlayers())
 			Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(player, "is connected"));

@@ -4,7 +4,7 @@ import fr.leomelki.loupgarou.classes.LGGame;
 import fr.leomelki.loupgarou.classes.LGPlayer;
 import fr.leomelki.loupgarou.classes.LGPlayer.LGChooseCallback;
 
-public class RVoyante extends Role{
+public class RVoyante extends Role {
 	public RVoyante(LGGame game) {
 		super(game);
 	}

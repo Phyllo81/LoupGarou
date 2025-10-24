@@ -36,14 +36,14 @@ import fr.leomelki.loupgarou.utils.VariousUtils;
 import lombok.Getter;
 import net.minecraft.server.v1_15_R1.DataWatcher;
 import net.minecraft.server.v1_15_R1.DataWatcherObject;
-import net.minecraft.server.v1_15_R1.DataWatcherRegistry;
 import net.minecraft.server.v1_15_R1.Entity;
 import net.minecraft.server.v1_15_R1.EntityArmorStand;
 import net.minecraft.server.v1_15_R1.IChatBaseComponent;
 import net.minecraft.server.v1_15_R1.PacketPlayOutEntityMetadata;
 
 public class LGVote {
-	@Getter LGPlayer choosen;
+	@Getter
+    LGPlayer choosen;
 	private int timeout, initialTimeout, littleTimeout;
 	private Runnable callback;
 	private final LGGame game;
