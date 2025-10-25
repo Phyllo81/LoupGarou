@@ -6,7 +6,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import fr.leomelki.loupgarou.classes.LGGameManager;
+import fr.leomelki.loupgarou.enums.GameModeType;
 import fr.leomelki.loupgarou.listeners.*;
+import lombok.var;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -83,20 +86,59 @@ public class MainLg extends JavaPlugin{
 	@Getter private HashMap<String, Constructor<? extends Role>> roles = new HashMap<String, Constructor<? extends Role>>();
 	@Getter private static String prefix = ""/*"§7[§9Loup-Garou§7] "*/;
 	
-	@Getter @Setter private LGGame currentGame;//Because for now, only one game will be playable on one server (flemme)
+	@Getter @Setter private LGGame currentGame;
+
+	@Getter private LGGameManager gameManager = new LGGameManager();
+
+	@Getter private GameModeType mode = GameModeType.SINGLE;
 	
 	@Override
 	public void onEnable() {
 		instance = this;
 		loadRoles();
-		if(!new File(getDataFolder(), "config.yml").exists()) {//Créer la config
+		/*if(!new File(getDataFolder(), "config.yml").exists()) {//Créer la config
 			FileConfiguration config = getConfig();
 			config.set("spawns", new ArrayList<List<Double>>());
 			for(String role : roles.keySet())//Nombre de participant pour chaque rôle
 				config.set("role."+role, 1);
 			saveConfig();
+		}*/
+
+		if(!new File(getDataFolder(), "config.yml").exists()) {
+			FileConfiguration config = getConfig();
+			config.set("mode", "SINGLE");
+			config.createSection("arenas");
+			saveConfig();
 		}
+
 		loadConfig();
+
+		String modeString = getConfig().getString("mode", "SINGLE").toUpperCase();
+
+		try {
+
+			mode = GameModeType.valueOf(modeString);
+
+		} catch(IllegalArgumentException e) {
+
+			mode = GameModeType.SINGLE;
+
+			getLogger().warning("⚠️ Mode inconnu dans config.yml, mode SINGLE par défaut.");
+
+		}
+
+		if(mode == GameModeType.MULTI) {
+
+			gameManager.loadGames();
+
+			getLogger().info("🎮 Multi-Arena activé : " + gameManager.getArenas().size() + " arènes chargées.");
+
+		} else if (mode == GameModeType.BUNGEE) {
+
+			getLogger().info("🌐 Mode Bungee activé — une seule partie gérée côté proxy.");
+
+		}
+
 		Bukkit.getPluginManager().registerEvents(new JoinListener(), this);
 		Bukkit.getPluginManager().registerEvents(new CancelListener(), this);
 		Bukkit.getPluginManager().registerEvents(new VoteListener(), this);
@@ -215,14 +257,43 @@ public class MainLg extends JavaPlugin{
 						return true;
 					}
 
-					Player player = (Player)sender;
+					/*Player player = (Player)sender;
 					Location loc = player.getLocation();
 					List<Object> list = (List<Object>) getConfig().getList("spawns");
 					list.add(Arrays.asList((double)loc.getBlockX(), loc.getY(), (double)loc.getBlockZ(), (double)loc.getYaw(), (double)loc.getPitch()));
 					saveConfig();
 					loadConfig();
 					sender.sendMessage(prefix+"§aLa position a bien été ajoutée !");
+					return true;*/
+
+					if(args.length < 2) {
+
+						sender.sendMessage("§cUsage: /lg addspawn <arena>");
+
+						return true;
+
+					}
+
+					Player p = (Player) sender;
+
+					String arena = args[1];
+
+					List<Object> list = (List<Object>) getConfig().getList("arenas." + arena + ".spawns");
+
+					if(list == null) list = new ArrayList<>();
+
+					var loc = p.getLocation();
+
+					list.add(Arrays.asList(loc.getX(), loc.getY(), loc.getZ(), (double) loc.getYaw(), (double) loc.getPitch()));
+
+					getConfig().set("arenas." + arena + ".spawns", list);
+
+					saveConfig();
+
+					sender.sendMessage(prefix+"§aLa position a bien été ajoutée pour " + arena + " !");
+
 					return true;
+
 				}else if(args[0].equalsIgnoreCase("end")) {
 
 					if(!sender.hasPermission("loupgarou.admin")) {
@@ -230,7 +301,7 @@ public class MainLg extends JavaPlugin{
 						return true;
 					}
 
-					if(args.length != 2) {
+					/*if(args.length != 2) {
 						sender.sendMessage("§4Utilisation : §c/lg end <pseudo>");
 						return true;
 					}
@@ -252,7 +323,26 @@ public class MainLg extends JavaPlugin{
 						Bukkit.getPluginManager().callEvent(new PlayerQuitEvent(p, "joinall"));
 					for(Player p : Bukkit.getOnlinePlayers())
 						Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(p, "joinall"));
+					return true;*/
+
+					String arena = args[1];
+
+					LGGame game = gameManager.getArena(arena);
+
+					if(game == null) {
+
+						sender.sendMessage(prefix+"§4Erreur: Arène " + arena + " introuvable.");
+
+						return true;
+
+					}
+
+					game.endGame(LGWinType.EQUAL);
+
+					sender.sendMessage(prefix+"§cLa partie a été arrêtée de force !");
+
 					return true;
+
 				}else if(args[0].equalsIgnoreCase("start")) {
 
 					if(!sender.hasPermission("loupgarou.admin")) {
@@ -260,7 +350,7 @@ public class MainLg extends JavaPlugin{
 						return true;
 					}
 
-					if(args.length < 2) {
+					/*if(args.length < 2) {
 						sender.sendMessage("§4Utilisation : §c/lg start <pseudo>");
 						return true;
 					}
@@ -281,7 +371,53 @@ public class MainLg extends JavaPlugin{
 					}
 					sender.sendMessage("§aVous avez bien démarré une nouvelle partie !");
 					lgp.getGame().updateStart();
-					return true;
+					return true;*/
+
+					if(mode == GameModeType.MULTI) {
+
+						if(args.length < 2) {
+
+							sender.sendMessage("§cUsage: /lg start <arena>");
+
+							return true;
+
+						}
+
+						String arena = args[1];
+
+						LGGame game = gameManager.getArena(arena);
+
+						if(game == null) {
+
+							sender.sendMessage("§4Erreur: Arène " + arena + " introuvable.");
+
+							return true;
+						}
+
+						sender.sendMessage("§aVous avez bien démarré une nouvelle partie !");
+
+						game.updateStart();
+
+						return true;
+
+					} else {
+
+						if(currentGame == null) {
+
+							sender.sendMessage("§4Erreur: Aucune partie disponible.");
+
+							return true;
+
+						}
+
+						currentGame.updateStart();
+
+						sender.sendMessage("§aVous avez bien démarré une nouvelle partie !");
+
+						return true;
+
+					}
+
 				}else if(args[0].equalsIgnoreCase("reloadconfig")) {
 
 					if(!sender.hasPermission("loupgarou.admin")) {
@@ -291,9 +427,13 @@ public class MainLg extends JavaPlugin{
 
 					sender.sendMessage("§aVous avez bien reload la config !");
 					sender.sendMessage("§7§oSi vous avez changé les rôles, écriver §8§o/lg joinall§7§o !");
+
+					reloadConfig();
+
 					loadConfig();
+
 					return true;
-				}else if(args[0].equalsIgnoreCase("joinall")) {
+				}/*else if(args[0].equalsIgnoreCase("joinall")) {
 
 					if(!sender.hasPermission("loupgarou.admin")) {
 						sender.sendMessage(prefix+"§4Erreur: Vous n'avez pas la permission...");
@@ -305,6 +445,40 @@ public class MainLg extends JavaPlugin{
 					for(Player p : Bukkit.getOnlinePlayers())
 						Bukkit.getPluginManager().callEvent(new PlayerJoinEvent(p, "joinall"));
 					return true;
+				}*/else if(args[0].equalsIgnoreCase("join")) {
+
+					if(args.length < 2) {
+
+						sender.sendMessage("§cUsage: /lg join <arena>");
+
+						return true;
+
+					}
+
+					String arena = args[1];
+
+					LGGame game = MainLg.getInstance().getGameManager().getArena(arena);
+
+					if(game == null) {
+
+						sender.sendMessage("§4Erreur: Arène " + arena + " introuvable.");
+
+						return true;
+
+					}
+
+					Player player = (Player) sender;
+
+					LGPlayer lgp = LGPlayer.thePlayer(player);
+
+					lgp.setGame(game);
+
+					game.addPlayer(lgp);
+
+					sender.sendMessage("§aVous avez rejoint l'arène §e" + arena + " !");
+
+					return true;
+
 				}else if(args[0].equalsIgnoreCase("reloadPacks")) {
 
 					if(!sender.hasPermission("loupgarou.admin")) {
@@ -527,12 +701,24 @@ public class MainLg extends JavaPlugin{
 				returnlist.add(s);
 		return returnlist;
 	}
+
 	public void loadConfig() {
+
 		int players = 0;
+
 		for(String role : roles.keySet())
 			players += getConfig().getInt("role."+role);
-		currentGame = new LGGame(players);
+
+		// currentGame = new LGGame(players);
+
+		if(mode == GameModeType.SINGLE)
+			currentGame = new LGGame("default", players);
+
+		else if(mode == GameModeType.MULTI)
+			gameManager.loadGames();
+
 	}
+
 	@Override
 	public void onDisable() {
 		ProtocolLibrary.getProtocolManager().removePacketListeners(this);

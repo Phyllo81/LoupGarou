@@ -2,16 +2,11 @@ package fr.leomelki.loupgarou.classes;
 
 import java.lang.reflect.Constructor;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
 
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import lombok.var;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -72,11 +67,19 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class LGGame implements Listener{
+
+	private final String name;
+
+	private final int maxPlayers;
+
+	private final Map<String, Integer> roleDistribution = new HashMap<>();
+
+	private final List<Location> spawns = new ArrayList<>();
+
 	private static boolean autoStart = false;
 	
-	
 	@Getter private final SecureRandom random = new SecureRandom();
-	@Getter private final int maxPlayers;
+	// @Getter private final int maxPlayers;
 	@Getter private ArrayList<LGPlayer> inGame = new ArrayList<LGPlayer>();
 	@Getter private ArrayList<Role> roles = new ArrayList<Role>();
 	
@@ -96,13 +99,58 @@ public class LGGame implements Listener{
 	});
 	
 	
-	public LGGame(int maxPlayers) {
+	/*public LGGame(int maxPlayers) {
 		this.maxPlayers = maxPlayers;
 		Bukkit.getPluginManager().registerEvents(this, MainLg.getInstance());
+	}*/
+
+	public LGGame(String name, int maxPlayers) {
+		this.name = name;
+		this.maxPlayers = maxPlayers;
+		loadArenaConfig();
 	}
-	
+
 	@Getter
 	private MultipleValueMap<LGPlayerKilledEvent.Reason, LGPlayer> deaths = new MultipleValueMap<LGPlayerKilledEvent.Reason, LGPlayer>();
+
+	public String getName() { return name; }
+
+	public int getMaxPlayers() { return maxPlayers; }
+
+	private void loadArenaConfig() {
+
+		var cfg = MainLg.getInstance().getConfig();
+
+		if(!cfg.isConfigurationSection("arenas." + name)) return;
+
+		var roleSection = cfg.getConfigurationSection("arenas." + name + ".roles");
+
+		if(roleSection != null) {
+
+			for(String role : roleSection.getKeys(false))
+				roleDistribution.put(role, cfg.getInt("arenas." + name + ".roles." + role));
+
+		}
+
+		List<List<Double>> list = (List<List<Double>>) cfg.getList("arenas." + name + ".spawns");
+
+		if(list != null) {
+
+			World world = Bukkit.getWorld(cfg.getString("arenas." + name + ".world", "world"));
+
+			for(List<Double> data : list) {
+
+				spawns.add(new Location(world, data.get(0), data.get(1), data.get(2), data.get(3).floatValue(), data.get(4).floatValue()));
+
+			}
+
+		}
+
+	}
+
+	public Map<String, Integer> getRoleDistribution() { return roleDistribution; }
+
+	public List<Location> getSpawns() { return spawns; }
 
 	public void sendActionBarMessage(String msg) {
 		WrapperPlayServerChat chat = new WrapperPlayServerChat();
@@ -913,4 +961,42 @@ public class LGGame implements Listener{
 			endGame(event.getWinType());
 		return event.getWinType() != LGWinType.NONE;
 	}
+
+	public void addPlayer(LGPlayer player) {
+
+		if(inGame.contains(player))
+			return;
+
+		inGame.add(player);
+
+		player.setGame(this);
+
+		List<Location> spawns = MainLg.getInstance().getConfig().getLocationList("spawns");
+
+		if(spawns.size() > inGame.size()) {
+
+			player.getPlayer().teleport(spawns.get(inGame.size() - 1));
+
+		} else {
+
+			player.getPlayer().sendMessage("§cAucun spawn disponible pour cette arène !");
+
+		}
+
+		broadcastMessage("§a" + player.getName() + " a rejoint la partie (" + inGame.size() + "/" + getMaxPlayers() + ")");
+
+	}
+
+	public void removePlayer(LGPlayer player) {
+
+		if(!inGame.contains(player))
+			return;
+
+		inGame.remove(player);
+		player.setGame(null);
+
+		broadcastMessage("§c" + player.getName() + " a quitté la partie.");
+
+	}
+
 }

@@ -138,6 +138,15 @@ public class LGPlayer {
 		}
 		return false;
 	}
+
+	public boolean joinArena(LGGame arena) {
+
+		this.game = arena;
+
+		return join(arena);
+
+	}
+
 	public void choose(LGChooseCallback callback, LGPlayer... blacklisted) {
 		this.blacklistedChoice = blacklisted == null ? new ArrayList<LGPlayer>(0) : Arrays.asList(blacklisted);
 		this.chooseCallback = callback;
