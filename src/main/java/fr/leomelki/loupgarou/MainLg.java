@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 import fr.leomelki.loupgarou.classes.LGGameManager;
+import fr.leomelki.loupgarou.classes.config.ArenaConfig;
 import fr.leomelki.loupgarou.enums.GameModeType;
 import fr.leomelki.loupgarou.listeners.*;
 import lombok.var;
@@ -91,6 +92,8 @@ public class MainLg extends JavaPlugin{
 	@Getter private LGGameManager gameManager = new LGGameManager();
 
 	@Getter private GameModeType mode = GameModeType.SINGLE;
+
+	private final HashMap<String, ArenaConfig> arenas = new HashMap<>();
 	
 	@Override
 	public void onEnable() {
@@ -98,9 +101,9 @@ public class MainLg extends JavaPlugin{
 		loadRoles();
 		/*if(!new File(getDataFolder(), "config.yml").exists()) {//Créer la config
 			FileConfiguration config = getConfig();
-			config.set("spawns", new ArrayList<List<Double>>());
+			config.set("arenas." + LGPlayer.thePlayer(player).getGame() + "spawns.", new ArrayList<List<Double>>());
 			for(String role : roles.keySet())//Nombre de participant pour chaque rôle
-				config.set("role."+role, 1);
+				config.set("arenas." + LGPlayer.thePlayer(player).getGame() + "role."+role, 1);
 			saveConfig();
 		}*/
 
@@ -138,6 +141,8 @@ public class MainLg extends JavaPlugin{
 			getLogger().info("🌐 Mode Bungee activé — une seule partie gérée côté proxy.");
 
 		}
+
+		loadArenas();
 
 		Bukkit.getPluginManager().registerEvents(new JoinListener(), this);
 		Bukkit.getPluginManager().registerEvents(new CancelListener(), this);
@@ -259,7 +264,7 @@ public class MainLg extends JavaPlugin{
 
 					/*Player player = (Player)sender;
 					Location loc = player.getLocation();
-					List<Object> list = (List<Object>) getConfig().getList("spawns");
+					List<Object> list = (List<Object>) getConfig().getList("arenas." + LGPlayer.thePlayer(player).getGame() + "spawns.");
 					list.add(Arrays.asList((double)loc.getBlockX(), loc.getY(), (double)loc.getBlockZ(), (double)loc.getYaw(), (double)loc.getPitch()));
 					saveConfig();
 					loadConfig();
@@ -317,7 +322,7 @@ public class MainLg extends JavaPlugin{
 					}
 					game.cancelWait();
 					game.endGame(LGWinType.EQUAL);
-					game.broadcastMessage("§cLa partie a été arrêtée de force !");
+					game.broadcast("§cLa partie a été arrêtée de force !");
 
 					for(Player p : Bukkit.getOnlinePlayers())
 						Bukkit.getPluginManager().callEvent(new PlayerQuitEvent(p, "joinall"));
@@ -364,7 +369,7 @@ public class MainLg extends JavaPlugin{
 						sender.sendMessage("§4Erreur : §cLe joueur §4"+lgp.getName()+"§c n'est pas dans une partie.");
 						return true;
 					}
-					if(MainLg.getInstance().getConfig().getList("spawns").size() < lgp.getGame().getMaxPlayers()) {
+					if(getArenaConfig().getSpawns().size() < lgp.getGame().getMaxPlayers()) {
 						sender.sendMessage("§4Erreur : §cIl n'y a pas assez de points de spawn !");
 						sender.sendMessage("§8§oPour les définir, merci de faire §7/lg addSpawn");
 						return true;
@@ -500,7 +505,7 @@ public class MainLg extends JavaPlugin{
 
 					sender.sendMessage("§aVous êtes passé à la prochaine nuit");
 					if(getCurrentGame() != null) {
-						getCurrentGame().broadcastMessage("§2§lLe passage à la prochaine nuit a été forcé !");
+						getCurrentGame().broadcast("§2§lLe passage à la prochaine nuit a été forcé !");
 						for(LGPlayer lgp : getCurrentGame().getInGame())
 							lgp.stopChoosing();
 						getCurrentGame().cancelWait();
@@ -516,7 +521,7 @@ public class MainLg extends JavaPlugin{
 
 					sender.sendMessage("§aVous êtes passé à la prochaine journée");
 					if(getCurrentGame() != null) {
-						getCurrentGame().broadcastMessage("§2§lLe passage à la prochaine journée a été forcé !");
+						getCurrentGame().broadcast("§2§lLe passage à la prochaine journée a été forcé !");
 						getCurrentGame().cancelWait();
 						for(LGPlayer lgp : getCurrentGame().getInGame())
 							lgp.stopChoosing();
@@ -530,57 +535,73 @@ public class MainLg extends JavaPlugin{
 						return true;
 					}
 
-					if(args.length == 1 || args[1].equalsIgnoreCase("list")) {
-						sender.sendMessage(prefix+"§6Voici la liste des rôles:");
-						int index = 0;
-						for(String role : getRoles().keySet())
-							sender.sendMessage(prefix+"  §e- "+index+++" - §6"+role+" §e> "+MainLg.getInstance().getConfig().getInt("role."+role));
-						sender.sendMessage("\n"+prefix+" §7Écrivez §8§o/lg roles set <role_id/role_name> <nombre>§7 pour définir le nombre de joueurs qui devrons avoir ce rôle.");
-					} else {
-						if(args[1].equalsIgnoreCase("set") && args.length == 4) {
-							String role = null;
-							if(args[2].length() <= 2)
-								try {
-									Integer i = Integer.valueOf(args[2]);
-									Object[] array = getRoles().keySet().toArray();
-									if(array.length <= i) {
-										sender.sendMessage(prefix+"§4Erreur: §cCe rôle n'existe pas.");
-										return true;
-									}else
-										role = (String)array[i];
-								}catch(Exception err) {sender.sendMessage(prefix+"§4Erreur: §cCeci n'est pas un nombre");}
-							else
-								role = args[2];
-							
-							if(role != null) {
-								String real_role = null;
-								for(String real : getRoles().keySet())
-									if(real.equalsIgnoreCase(role)) {
-										real_role = real;
-										break;
-									}
-								
-								if(real_role != null) {
-									try {
-										MainLg.getInstance().getConfig().set("role."+real_role, Integer.valueOf(args[3]));
-										sender.sendMessage(prefix+"§6Il y aura §e"+args[3]+" §6"+real_role);
-										saveConfig();
-										loadConfig();
-										sender.sendMessage("§7§oSi vous avez fini de changer les rôles, écriver §8§o/lg joinall§7§o !");
-									}catch(Exception err) {
-										sender.sendMessage(prefix+"§4Erreur: §c"+args[3]+" n'est pas un nombre");
-									}
-									return true;
-								}
-							}
-							sender.sendMessage(prefix+"§4Erreur: §cLe rôle que vous avez entré est incorrect");
-							
+					if(sender instanceof Player) {
+
+						Player p = (Player) sender;
+
+						LGPlayer lgp = LGPlayer.thePlayer(p);
+
+						ArenaConfig arena = lgp.getGame().getArenaConfig();
+
+						if(args.length == 1 || args[1].equalsIgnoreCase("list")) {
+							sender.sendMessage(prefix+"§6Voici la liste des rôles:");
+							int index = 0;
+							for(String role : getRoles().keySet())
+								sender.sendMessage(prefix+"  §e- "+index+++" - §6"+role+" §e> " + arena.getRoleCount(role));
+							sender.sendMessage("\n"+prefix+" §7Écrivez §8§o/lg roles set <role_id/role_name> <nombre>§7 pour définir le nombre de joueurs qui devrons avoir ce rôle.");
 						} else {
-							sender.sendMessage(prefix+"§4Erreur: §cCommande incorrecte.");
-							sender.sendMessage(prefix+"§4Essayez §c/lg roles set <role_id/role_name> <nombre>§4 ou §c/lg roles list");
+							if(args[1].equalsIgnoreCase("set") && args.length == 4) {
+								String role = null;
+								if(args[2].length() <= 2)
+									try {
+										Integer i = Integer.valueOf(args[2]);
+										Object[] array = getRoles().keySet().toArray();
+										if(array.length <= i) {
+											sender.sendMessage(prefix+"§4Erreur: §cCe rôle n'existe pas.");
+											return true;
+										}else
+											role = (String)array[i];
+									}catch(Exception err) {sender.sendMessage(prefix+"§4Erreur: §cCeci n'est pas un nombre");}
+								else
+									role = args[2];
+
+								if(role != null) {
+									String real_role = null;
+									for(String real : getRoles().keySet())
+										if(real.equalsIgnoreCase(role)) {
+											real_role = real;
+											break;
+										}
+
+									if(real_role != null) {
+										try {
+											MainLg.getInstance().getConfig().set("arenas." + lgp.getGame().getName() + "role."+real_role, Integer.valueOf(args[3]));
+											sender.sendMessage(prefix+"§6Il y aura §e"+args[3]+" §6"+real_role);
+											saveConfig();
+											loadConfig();
+											// sender.sendMessage("§7§oSi vous avez fini de changer les rôles, écriver §8§o/lg joinall§7§o !");
+										}catch(Exception err) {
+											sender.sendMessage(prefix+"§4Erreur: §c"+args[3]+" n'est pas un nombre");
+										}
+										return true;
+									}
+								}
+								sender.sendMessage(prefix+"§4Erreur: §cLe rôle que vous avez entré est incorrect");
+
+							} else {
+								sender.sendMessage(prefix+"§4Erreur: §cCommande incorrecte.");
+								sender.sendMessage(prefix+"§4Essayez §c/lg roles set <role_id/role_name> <nombre>§4 ou §c/lg roles list");
+							}
 						}
+
+						return true;
+
+					} else {
+
+						sender.sendMessage(prefix+"§4Erreur: §cSeul un joueur peut utiliser cette commande.");
+
 					}
-					return true;
+
 				} else if(args[0].equalsIgnoreCase("info")) {
 
 					if(args.length == 2) {
@@ -702,12 +723,28 @@ public class MainLg extends JavaPlugin{
 		return returnlist;
 	}
 
-	public void loadConfig() {
+	public void loadArenas() {
+		for (String name : getConfig().getConfigurationSection("arenas").getKeys(false)) {
+			ArenaConfig arenaConfig = new ArenaConfig(name, getConfig());
+			arenas.put(name, arenaConfig);
+			getLogger().info("✅ Arène chargée: " + name);
+		}
+	}
+
+	public ArenaConfig getArena(String name) {
+		return arenas.get(name);
+	}
+
+	public HashMap<String, ArenaConfig> getArenas() {
+		return arenas;
+	}
+
+	/*public void loadConfig() {
 
 		int players = 0;
 
 		for(String role : roles.keySet())
-			players += getConfig().getInt("role."+role);
+			players += getConfig().getInt("arenas." + LGPlayer.thePlayer(player).getGame() + "role."+role);
 
 		// currentGame = new LGGame(players);
 
@@ -717,7 +754,40 @@ public class MainLg extends JavaPlugin{
 		else if(mode == GameModeType.MULTI)
 			gameManager.loadGames();
 
+	}*/
+
+	public void loadConfig() {
+
+		int players = 0;
+
+		if(mode == GameModeType.SINGLE) {
+
+			String base = "arenas.default.roles";
+
+			if(getConfig().isConfigurationSection(base)) {
+
+				for (String role : getConfig().getConfigurationSection(base).getKeys(false)) {
+
+					players += getConfig().getInt(base + "." + role, 0);
+
+				}
+
+			}
+
+			currentGame = new LGGame("default", players);
+
+		} else if (mode == GameModeType.MULTI) {
+
+			gameManager.loadGames();
+
+		} else if (mode == GameModeType.BUNGEE) {
+
+			getLogger().info("Mode Bungee détecté : aucune arène locale chargée.");
+
+		}
+
 	}
+
 
 	@Override
 	public void onDisable() {

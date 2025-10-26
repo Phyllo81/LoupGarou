@@ -1,6 +1,8 @@
 package fr.leomelki.loupgarou.listeners;
 
 import fr.leomelki.loupgarou.MainLg;
+import fr.leomelki.loupgarou.classes.LGPlayer;
+import fr.leomelki.loupgarou.classes.config.ArenaConfig;
 import fr.leomelki.loupgarou.roles.Role;
 import lombok.Getter;
 import org.bukkit.Bukkit;
@@ -116,7 +118,7 @@ public class PlayerInteractListener implements Listener {
 
                 p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 1f, 1.2f);
 
-            } else if(it.getType() == Material.GOLD_NUGGET && it.getItemMeta().getDisplayName().equalsIgnoreCase("§2§lValider")) {
+            }/* else if(it.getType() == Material.GOLD_NUGGET && it.getItemMeta().getDisplayName().equalsIgnoreCase("§2§lValider")) {
 
                 for(Player players : Bukkit.getOnlinePlayers())
                     Bukkit.getPluginManager().callEvent(new PlayerQuitEvent(players, "joinall"));
@@ -128,7 +130,7 @@ public class PlayerInteractListener implements Listener {
 
                 p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
 
-            } else if(it.getType() == Material.EGG || it.getType() == Material.DRAGON_EGG) {
+            }*/ else if(it.getType() == Material.EGG || it.getType() == Material.DRAGON_EGG) {
 
                 if(e.isLeftClick()) {
 
@@ -136,7 +138,11 @@ public class PlayerInteractListener implements Listener {
 
                         if(role.equals(e.getCurrentItem().getItemMeta().getDisplayName().replace("§r", ""))) {
 
-                            n = MainLg.getInstance().getConfig().getInt("role." + role);
+                            LGPlayer lgp = LGPlayer.thePlayer(p);
+
+                            ArenaConfig arena = lgp.getGame().getArenaConfig();
+
+                            n = arena.getRoleCount(role);
 
                             Bukkit.dispatchCommand(p, "lg roles set " + index + " " + (n + 1));
 
@@ -156,7 +162,11 @@ public class PlayerInteractListener implements Listener {
 
                         if(role.equals(e.getCurrentItem().getItemMeta().getDisplayName().replace("§r", ""))) {
 
-                            n = MainLg.getInstance().getConfig().getInt("role." + role);
+                            LGPlayer lgp = LGPlayer.thePlayer(p);
+
+                            ArenaConfig arena = lgp.getGame().getArenaConfig();
+
+                            n = arena.getRoleCount(role);
 
                             if(n > 0) {
 
@@ -176,7 +186,11 @@ public class PlayerInteractListener implements Listener {
 
                 }
 
-                int amount = MainLg.getInstance().getConfig().getInt("role." + it.getItemMeta().getDisplayName().replace("§r", ""), 0);
+                LGPlayer lgp = LGPlayer.thePlayer(p);
+
+                ArenaConfig arena = lgp.getGame().getArenaConfig();
+
+                int amount = arena.getRoleCount(it.getItemMeta().getDisplayName().replace("§r", ""));
 
                 ItemStack roleItem;
 
@@ -221,17 +235,18 @@ public class PlayerInteractListener implements Listener {
         gui.setItem(46, glassPane.clone());
         gui.setItem(47, glassPane.clone());
         gui.setItem(48, glassPane.clone());
+        gui.setItem(49, glassPane.clone());
         gui.setItem(50, glassPane.clone());
         gui.setItem(51, glassPane.clone());
         gui.setItem(52, glassPane.clone());
         gui.setItem(53, glassPane.clone());
 
-        ItemStack valider = new ItemStack(Material.GOLD_NUGGET);
+        /*ItemStack valider = new ItemStack(Material.GOLD_NUGGET);
         ItemMeta validerM = valider.getItemMeta();
         validerM.setDisplayName("§2§lValider");
         valider.setItemMeta(validerM);
 
-        gui.setItem(49, valider);
+        gui.setItem(49, valider);*/
 
         int[] slots = new int[45];
 
@@ -251,7 +266,11 @@ public class PlayerInteractListener implements Listener {
 
             String roleName = roleNames.get(i);
 
-            int amount = MainLg.getInstance().getConfig().getInt("role." + roleName, 0);
+            LGPlayer lgp = LGPlayer.thePlayer(player);
+
+            ArenaConfig arena = lgp.getGame().getArenaConfig();
+
+            int amount = arena.getRoleCount(roleName);
 
             ItemStack roleItem;
 

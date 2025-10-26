@@ -3,6 +3,7 @@ package fr.leomelki.loupgarou.roles;
 import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
+import fr.leomelki.loupgarou.classes.config.ArenaConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.Listener;
@@ -24,9 +25,15 @@ public abstract class Role implements Listener{
 		this.game = game;
 		Bukkit.getPluginManager().registerEvents(this, MainLg.getInstance());
 		FileConfiguration config = MainLg.getInstance().getConfig();
-		String roleConfigName = "role."+getClass().getSimpleName().substring(1);
+		String roleConfigName = "arenas." + game + "role."+getClass().getSimpleName().substring(1);
 		if(config.contains(roleConfigName))
 			waitedPlayers = config.getInt(roleConfigName);
+	}
+
+	public ArenaConfig getArenaConfig() {
+
+		return getGame().getArenaConfig();
+
 	}
 	
 

@@ -2,6 +2,7 @@ package fr.leomelki.loupgarou.listeners;
 
 import java.util.Arrays;
 
+import fr.leomelki.loupgarou.enums.GameModeType;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
@@ -54,23 +55,28 @@ public class JoinListener implements Listener{
 		else {
 			LGPlayer lgp = LGPlayer.thePlayer(e.getPlayer());
 			lgp.showView();
-			lgp.join(MainLg.getInstance().getCurrentGame());
 
-			if(p.hasPermission("loupgarou.admin")) {
+			if(MainLg.getInstance().getMode() == GameModeType.SINGLE || MainLg.getInstance().getMode() == GameModeType.BUNGEE) {
 
-				ItemStack role = new ItemStack(Material.CHEST);
-				ItemMeta roleM = role.getItemMeta();
-				roleM.setDisplayName("§6§lRôles");
-				role.setItemMeta(roleM);
+				lgp.join(MainLg.getInstance().getCurrentGame());
 
-				p.getInventory().setItem(3, role);
+				if(p.hasPermission("loupgarou.admin")) {
 
-				ItemStack start = new ItemStack(Material.GOLD_NUGGET);
-				ItemMeta startM = start.getItemMeta();
-				startM.setDisplayName("§2§lStart");
-				start.setItemMeta(startM);
+					ItemStack role = new ItemStack(Material.CHEST);
+					ItemMeta roleM = role.getItemMeta();
+					roleM.setDisplayName("§6§lRôles");
+					role.setItemMeta(roleM);
 
-				p.getInventory().setItem(5, start);
+					p.getInventory().setItem(3, role);
+
+					ItemStack start = new ItemStack(Material.GOLD_NUGGET);
+					ItemMeta startM = start.getItemMeta();
+					startM.setDisplayName("§2§lStart");
+					start.setItemMeta(startM);
+
+					p.getInventory().setItem(5, start);
+
+				}
 
 			}
 
@@ -88,23 +94,28 @@ public class JoinListener implements Listener{
 			Player p = e.getPlayer();
 			LGPlayer lgp = LGPlayer.thePlayer(p);
 			lgp.showView();
-			lgp.join(MainLg.getInstance().getCurrentGame());
 
-			if(p.hasPermission("loupgarou.admin")) {
+			if(MainLg.getInstance().getMode() == GameModeType.SINGLE || MainLg.getInstance().getMode() == GameModeType.BUNGEE) {
 
-				ItemStack role = new ItemStack(Material.CHEST);
-				ItemMeta roleM = role.getItemMeta();
-				roleM.setDisplayName("§6§lRôles");
-				role.setItemMeta(roleM);
+				lgp.join(MainLg.getInstance().getCurrentGame());
 
-				p.getInventory().setItem(3, role);
+				if(p.hasPermission("loupgarou.admin")) {
 
-				ItemStack start = new ItemStack(Material.GOLD_NUGGET);
-				ItemMeta startM = start.getItemMeta();
-				startM.setDisplayName("§2§lStart");
-				start.setItemMeta(startM);
+					ItemStack role = new ItemStack(Material.CHEST);
+					ItemMeta roleM = role.getItemMeta();
+					roleM.setDisplayName("§6§lRôles");
+					role.setItemMeta(roleM);
 
-				p.getInventory().setItem(5, start);
+					p.getInventory().setItem(3, role);
+
+					ItemStack start = new ItemStack(Material.GOLD_NUGGET);
+					ItemMeta startM = start.getItemMeta();
+					startM.setDisplayName("§2§lStart");
+					start.setItemMeta(startM);
+
+					p.getInventory().setItem(5, start);
+
+				}
 
 			}
 

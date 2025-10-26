@@ -261,7 +261,7 @@ public class RPretre extends Role{
 					
 					getGame().updateRoleScoreboard();
 					
-					getGame().broadcastMessage("§7§l"+lgp.getName()+"§6 a été ressuscité cette nuit.");
+					getGame().broadcast("§7§l"+lgp.getName()+"§6 a été ressuscité cette nuit.");
 
 					for(LGPlayer player : getGame().getInGame())
 						if(player.getPlayer() != null && player != lgp) {

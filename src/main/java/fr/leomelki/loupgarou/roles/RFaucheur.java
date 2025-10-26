@@ -80,7 +80,7 @@ public class RFaucheur extends Role{
 					getGame().kill(killEvent.getKilled(), killEvent.getReason(), false);
 				}
 			} else if (e.getReason() == Reason.VOTE) {
-				List<?> original = MainLg.getInstance().getConfig().getList("spawns");
+				List<?> original = getArenaConfig().getSpawns();
 				int size = original.size();
 				// double middle = ((double)size)/2D;
 				int killedPlace = killed.getPlace();

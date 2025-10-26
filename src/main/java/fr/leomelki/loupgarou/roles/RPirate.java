@@ -171,7 +171,7 @@ public class RPirate extends Role{
 			if(e.getKilled().getCache().has("pirate_otage") && e.getKilled().isRoleActive()) {
 				LGPlayer otage = e.getKilled().getCache().remove("pirate_otage");
 				if(!otage.isDead() && otage.getCache().get("pirate_otage_d") == e.getKilled()) {
-					getGame().broadcastMessage("§7§l"+e.getKilled().getName()+"§6 est "+getName()+"§6, c'est son otage qui va mourir.");
+					getGame().broadcast("§7§l"+e.getKilled().getName()+"§6 est "+getName()+"§6, c'est son otage qui va mourir.");
 					e.setKilled(otage);
 					e.setReason(Reason.PIRATE);
 				}

@@ -61,7 +61,7 @@ public class RMontreurDOurs extends Role{
 			if(lastNight == getGame().getNight())
 				return;
 			lastNight = getGame().getNight();
-			List<?> original = MainLg.getInstance().getConfig().getList("spawns");
+			List<?> original = getArenaConfig().getSpawns();
 			for(LGPlayer target : getPlayers()) {
 				if(!target.isRoleActive())
 					continue;
@@ -76,7 +76,7 @@ public class RMontreurDOurs extends Role{
 						if(lgp.getRoleWinType() == RoleWinType.VILLAGE || lgp.getRoleWinType() == RoleWinType.NONE)
 							break;
 						else{
-							getGame().broadcastMessage("§6La bête du "+getName()+"§6 grogne...");
+							getGame().broadcast("§6La bête du "+getName()+"§6 grogne...");
 							return;
 						}
 					}
@@ -91,7 +91,7 @@ public class RMontreurDOurs extends Role{
 						if(lgp.getRoleWinType() == RoleWinType.VILLAGE || lgp.getRoleWinType() == RoleWinType.NONE)
 							break;
 						else{
-							getGame().broadcastMessage("§6La bête du "+getName()+"§6 grogne...");
+							getGame().broadcast("§6La bête du "+getName()+"§6 grogne...");
 							return;
 						}
 					}

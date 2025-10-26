@@ -62,7 +62,7 @@ public class RChasseur extends Role{
 		}, (currentPlayer, secondsLeft)->{
 			return currentPlayer == player ? "§9§lC'est à ton tour !" : "§6Le Chasseur choisit sa cible (§e"+secondsLeft+" s§6)";
 		});
-		getGame().broadcastMessage("§9"+getBroadcastedTask());
+		getGame().broadcast("§9"+getBroadcastedTask());
 		player.sendMessage("§6"+getTask());
 		//player.sendTitle("§6C'est à vous de jouer", "§a"+getTask(), 60);
 		player.choose((choosen)->{
@@ -83,7 +83,7 @@ public class RChasseur extends Role{
 	
 	@Override
 	protected void onNightTurnTimeout(LGPlayer player) {
-		getGame().broadcastMessage("§9Il n'a pas tiré sur la détente...");
+		getGame().broadcast("§9Il n'a pas tiré sur la détente...");
 		player.stopChoosing();
 	}
 	

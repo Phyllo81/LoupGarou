@@ -5,6 +5,8 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.Map.Entry;
 
+import fr.leomelki.loupgarou.classes.config.ArenaConfig;
+import fr.leomelki.loupgarou.enums.GameModeType;
 import lombok.var;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -76,6 +78,8 @@ public class LGGame implements Listener{
 
 	private final List<Location> spawns = new ArrayList<>();
 
+	@Getter private final ArenaConfig arenaConfig;
+
 	private static boolean autoStart = false;
 	
 	@Getter private final SecureRandom random = new SecureRandom();
@@ -104,10 +108,42 @@ public class LGGame implements Listener{
 		Bukkit.getPluginManager().registerEvents(this, MainLg.getInstance());
 	}*/
 
-	public LGGame(String name, int maxPlayers) {
+	/*public LGGame(String name, int maxPlayers) {
 		this.name = name;
 		this.maxPlayers = maxPlayers;
 		loadArenaConfig();
+	}*/
+
+	private LGGame(String name, int maxPlayers, ArenaConfig arenaConfig) {
+
+		this.name = name;
+
+		this.maxPlayers = maxPlayers;
+
+		this.arenaConfig = arenaConfig;
+
+		Bukkit.getPluginManager().registerEvents(this, MainLg.getInstance());
+
+		loadArenaConfig();
+
+	}
+
+	public LGGame(String name, int maxPlayers) {
+
+		this(name, maxPlayers, new ArenaConfig(name, MainLg.getInstance().getConfig()));
+
+	}
+
+	public LGGame(ArenaConfig arenaConfig, int maxPlayers) {
+
+		this(arenaConfig.getArenaName(), maxPlayers, arenaConfig);
+
+	}
+
+	public ArenaConfig getArenaConfig() {
+
+		return arenaConfig;
+
 	}
 
 	@Getter
@@ -159,7 +195,7 @@ public class LGGame implements Listener{
 		for(LGPlayer lgp : inGame)
 			chat.sendPacket(lgp.getPlayer());
 	}
-	public void broadcastMessage(String msg) {
+	public void broadcast(String msg) {
 		for(LGPlayer lgp : inGame)
 			lgp.sendMessage(msg);
 	}
@@ -295,7 +331,7 @@ public class LGGame implements Listener{
 			}
 			
 			player.setGameMode(GameMode.ADVENTURE);
-			broadcastMessage("§7Le joueur §8"+lgp.getName()+"§7 a rejoint la partie §9(§8"+inGame.size()+"§7/§8"+maxPlayers+"§9)");
+			broadcast("§7Le joueur §8"+lgp.getName()+"§7 a rejoint la partie §9(§8"+inGame.size()+"§7/§8"+maxPlayers+"§9)");
 			
 			//Reset scoreboard
 			WrapperPlayServerScoreboardObjective obj = new WrapperPlayServerScoreboardObjective();
@@ -315,7 +351,7 @@ public class LGGame implements Listener{
 		if(startingTask != null) {
 			startingTask.cancel();
 			startingTask = null;
-			broadcastMessage("§c§oUn joueur s'est déconnecté. Le décompte de lancement a donc été arrêté.");
+			broadcast("§c§oUn joueur s'est déconnecté. Le décompte de lancement a donc été arrêté.");
 		}
 	}
 	public void updateStart() {
@@ -342,7 +378,7 @@ public class LGGame implements Listener{
 				}
 			}else if(startingTask != null) {
 				startingTask.cancel();
-				broadcastMessage("§c§oLe démarrage de la partie a été annulé car une personne l'a quittée !");
+				broadcast("§c§oLe démarrage de la partie a été annulé car une personne l'a quittée !");
 			}
 	}
 	public void start() {
@@ -355,7 +391,10 @@ public class LGGame implements Listener{
 		MainLg main = MainLg.getInstance();
 		
 		//Registering roles
-		List<?> original = MainLg.getInstance().getConfig().getList("spawns");
+		// List<?> original = getArenaConfig().getSpawns();
+
+		List<?> original = this.spawns;
+
 		List<Object> list = new ArrayList<Object>(original);
 		for(LGPlayer lgp : getInGame()) {
 			List<Double> location = (List<Double>) list.remove(random.nextInt(list.size()));
@@ -374,11 +413,28 @@ public class LGGame implements Listener{
 		}
 		
 		try {
-			for(Entry<String, Constructor<? extends Role>> role : main.getRoles().entrySet())
-				if(main.getConfig().getInt("role."+role.getKey()) > 0)
-					roles.add(role.getValue().newInstance(this));
+			/*for(Entry<String, Constructor<? extends Role>> role : main.getRoles().entrySet())
+				if(main.getConfig().getInt("arenas." + LGPlayer.thePlayer(player).getGame() + "role."+role.getKey()) > 0)
+					roles.add(role.getValue().newInstance(this));*/
+
+			for(java.util.Map.Entry<String, Integer> e : roleDistribution.entrySet()) {
+
+				String roleName = e.getKey();
+
+				int count = e.getValue();
+
+				Constructor<? extends fr.leomelki.loupgarou.roles.Role> ctor = MainLg.getInstance().getRoles().get(roleName);
+
+				if(ctor == null) continue;
+
+				for(int i = 0; i < count; i++)
+					roles.add(ctor.newInstance(this));
+
+			}
+
 		}catch(Exception err) {
-			Bukkit.broadcastMessage("§4§lUne erreur est survenue lors de la création des roles... Regardez la console !");
+			broadcast("§4§lUne erreur est survenue lors de la création des roles... Regardez la console !");
+
 			err.printStackTrace();
 		}
 		
@@ -399,7 +455,7 @@ public class LGGame implements Listener{
 						lgp.getPlayer().getInventory().clear();
 						lgp.getPlayer().updateInventory();
 					}
-					broadcastMessage("§2Attribution des rôles...");
+					broadcast("§2Attribution des rôles...");
 				}
 				
 				if(--actualRole < 0)
@@ -414,7 +470,7 @@ public class LGGame implements Listener{
 		}.runTaskTimer(MainLg.getInstance(), 0, 4);
 	}
 	private void _start() {
-		broadcastMessage("§8§oDébut de la partie...");
+		broadcast("§8§oDébut de la partie...");
 		//Give roles...
 		ArrayList<LGPlayer> toGive = (ArrayList<LGPlayer>) inGame.clone();
 		started = false;
@@ -490,12 +546,12 @@ public class LGGame implements Listener{
 			return;
 		
 		if(mayorKilled()) {//mort du maire
-			broadcastMessage("§9Le §5§lCapitaine§9 est mort, il désigne un joueur en remplaçant.");
+			broadcast("§9Le §5§lCapitaine§9 est mort, il désigne un joueur en remplaçant.");
 			getMayor().sendMessage("§6Choisis un joueur qui deviendra §5§lCapitaine§6 à son tour.");
 			LGGame.this.wait(30, ()->{
 				mayor.stopChoosing();
 				setMayor(getAlive().get(random.nextInt(getAlive().size())));
-				broadcastMessage("§7§l"+mayor.getName()+"§9 devient le nouveau §5§lCapitaine§9.");
+				broadcast("§7§l"+mayor.getName()+"§9 devient le nouveau §5§lCapitaine§9.");
 				nextNight();
 			}, (player, secondsLeft)->{
 				return "§e"+mayor.getName()+"§6 choisit qui sera le nouveau §5§lCapitaine§6 (§e"+secondsLeft+" s§6)";
@@ -505,7 +561,7 @@ public class LGGame implements Listener{
 					mayor.stopChoosing();
 					cancelWait();
 					setMayor(choosen);
-					broadcastMessage("§7§l"+mayor.getName()+"§9 devient le nouveau §5§lCapitaine§9.");
+					broadcast("§7§l"+mayor.getName()+"§9 devient le nouveau §5§lCapitaine§9.");
 					nextNight();
 				}
 			}, mayor);
@@ -535,8 +591,8 @@ public class LGGame implements Listener{
 		if(ended)return;
 		night++;
 		broadcastSpacer();
-		broadcastMessage("§9----------- §lNuit n°"+night+"§9 -----------");
-		broadcastMessage("§8§oLa nuit tombe sur le village...");
+		broadcast("§9----------- §lNuit n°"+night+"§9 -----------");
+		broadcast("§8§oLa nuit tombe sur le village...");
 		for(LGPlayer player : getAlive())
 			player.leaveChat();
 		for(LGPlayer player : getInGame()) {
@@ -571,7 +627,7 @@ public class LGGame implements Listener{
 						if(role.getTurnOrder() == -1 || !role.hasPlayersLeft())
 							this.run();
 						else {
-							broadcastMessage("§9"+role.getBroadcastedTask());
+							broadcast("§9"+role.getBroadcastedTask());
 							role.onNightTurn(run);
 						}
 					}
@@ -598,7 +654,7 @@ public class LGGame implements Listener{
 			if(vote != null)
 				vote.remove(killed);
 			
-			broadcastMessage(String.format(reason.getMessage(), killed.getName())+", il était "+killed.getRole().getName()+(killed.getCache().getBoolean("infected") ? " §c§l(Infecté)" : "")+(killed.getCache().getBoolean("vampire") ? " §5§l(Vampire)" : "")+"§4.");
+			broadcast(String.format(reason.getMessage(), killed.getName())+", il était "+killed.getRole().getName()+(killed.getCache().getBoolean("infected") ? " §c§l(Infecté)" : "")+(killed.getCache().getBoolean("vampire") ? " §5§l(Vampire)" : "")+"§4.");
 			
 			//Lightning effect
 			killed.getPlayer().getWorld().strikeLightningEffect(killed.getPlayer().getLocation());
@@ -666,7 +722,7 @@ public class LGGame implements Listener{
 		for(Role role : getRoles())
 			HandlerList.unregisterAll(role);
 		
-		broadcastMessage(winType.getMessage());
+		broadcast(winType.getMessage());
 		for(LGPlayer lgp : getInGame()) {
 			lgp.leaveChat();
 			lgp.joinChat(spectatorChat);
@@ -697,7 +753,13 @@ public class LGGame implements Listener{
 				team.setMode(1);
 				team.setName("you_are");
 				team.sendPacket(lgp.getPlayer());
-				LGPlayer.thePlayer(lgp.getPlayer()).join(MainLg.getInstance().getCurrentGame());
+
+				if(MainLg.getInstance().getMode() == GameModeType.SINGLE || MainLg.getInstance().getMode() == GameModeType.BUNGEE) {
+
+					LGPlayer.thePlayer(lgp.getPlayer()).join(MainLg.getInstance().getCurrentGame());
+
+				}
+
 			}
 
 		for(Player p : Bukkit.getOnlinePlayers())
@@ -725,8 +787,8 @@ public class LGGame implements Listener{
 	public void endNight() {
 		if(ended)return;
 		broadcastSpacer();
-		broadcastMessage("§9----------- §lJour n°"+night+"§9 -----------");
-		broadcastMessage("§8§oLe jour se lève sur le village...");
+		broadcast("§9----------- §lJour n°"+night+"§9 -----------");
+		broadcast("§8§oLe jour se lève sur le village...");
 		
 		for(LGPlayer p : getInGame()) {
 			p.stopAudio(LGSound.AMBIANT_NIGHT);
@@ -759,7 +821,7 @@ public class LGGame implements Listener{
 		}
 		deaths.clear();
 		if(died == 0)
-			broadcastMessage("§9Étonnamment, personne n'est mort cette nuit.");
+			broadcast("§9Étonnamment, personne n'est mort cette nuit.");
 
 		day = true;
 		for(LGPlayer player : getInGame())
@@ -800,12 +862,12 @@ public class LGGame implements Listener{
 		if(dayStart.isCancelled())
 			return;
 		if(mayorKilled()) {//mort du maire
-			broadcastMessage("§9Le §5§lCapitaine§9 est mort, il désigne un joueur en remplaçant.");
+			broadcast("§9Le §5§lCapitaine§9 est mort, il désigne un joueur en remplaçant.");
 			getMayor().sendMessage("§6Choisis un joueur qui deviendra §5§lCapitaine§6 à son tour.");
 			LGGame.this.wait(30, ()->{
 				mayor.stopChoosing();
 				setMayor(getAlive().get(random.nextInt(getAlive().size())));
-				broadcastMessage("§7§l"+mayor.getName()+"§9 devient le nouveau §5§lCapitaine§9.");
+				broadcast("§7§l"+mayor.getName()+"§9 devient le nouveau §5§lCapitaine§9.");
 				startDay();
 			}, (player, secondsLeft)->{
 				return "§e"+mayor.getName()+"§6 choisit qui sera le nouveau §5§lCapitaine§6 (§e"+secondsLeft+" s§6)";
@@ -815,7 +877,7 @@ public class LGGame implements Listener{
 					mayor.stopChoosing();
 					cancelWait();
 					setMayor(choosen);
-					broadcastMessage("§7§l"+mayor.getName()+"§9 devient le nouveau §5§lCapitaine§9.");
+					broadcast("§7§l"+mayor.getName()+"§9 devient le nouveau §5§lCapitaine§9.");
 					startDay();
 				}
 			}, mayor);
@@ -875,7 +937,7 @@ public class LGGame implements Listener{
 		LGMayorVoteEvent event = new LGMayorVoteEvent(this);
 		Bukkit.getPluginManager().callEvent(event);
 		if(!event.isCancelled()) {
-			broadcastMessage("§9Il est temps de voter pour élire un §5§lCapitaine§9.");
+			broadcast("§9Il est temps de voter pour élire un §5§lCapitaine§9.");
 			vote = new LGVote(180, 20, this, true, true, (player, secondsLeft)-> {
 				return player.getCache().has("vote") ? "§6Tu votes pour §7§l"+player.getCache().<LGPlayer>get("vote").getName() : "§6Il te reste §e"+secondsLeft+" seconde"+(secondsLeft > 1 ? "s" : "")+"§6 pour voter";
 			});
@@ -885,7 +947,7 @@ public class LGGame implements Listener{
 				else
 					setMayor(vote.getChoosen());
 
-				broadcastMessage("§7§l"+mayor.getName()+"§6 devient le §5§lCapitaine §6du village.");
+				broadcast("§7§l"+mayor.getName()+"§6 devient le §5§lCapitaine §6du village.");
 				peopleVote();
 			});
 		}
@@ -909,7 +971,7 @@ public class LGGame implements Listener{
 		LGVoteEvent event = new LGVoteEvent(this);
 		Bukkit.getPluginManager().callEvent(event);
 		if(!event.isCancelled()) {
-			broadcastMessage("§9La phase des votes a commencé.");
+			broadcast("§9La phase des votes a commencé.");
 			isPeopleVote = true;
 			vote = new LGVote(180, 20, this, false, false, (player, secondsLeft)-> {
 				return player.getCache().has("vote") ? "§6Tu votes pour §7§l"+player.getCache().<LGPlayer>get("vote").getName() : "§6Il te reste §e"+secondsLeft+" seconde"+(secondsLeft > 1 ? "s" : "")+"§6 pour voter";
@@ -917,7 +979,7 @@ public class LGGame implements Listener{
 			vote.start(getAlive(), getInGame(), ()->{
 				isPeopleVote = false;
 				if(vote.getChoosen() == null || (vote.isMayorVote() && getMayor() == null))
-					broadcastMessage(/*getMayor() != null ? "§9Le maire a décidé de gracier les accusés." : */"§9Personne n'est mort aujourd'hui.");
+					broadcast(/*getMayor() != null ? "§9Le maire a décidé de gracier les accusés." : */"§9Personne n'est mort aujourd'hui.");
 				else {
 					LGPlayerKilledEvent killEvent = new LGPlayerKilledEvent(this, vote.getChoosen(), Reason.VOTE);
 					Bukkit.getPluginManager().callEvent(killEvent);
@@ -962,28 +1024,23 @@ public class LGGame implements Listener{
 		return event.getWinType() != LGWinType.NONE;
 	}
 
-	public void addPlayer(LGPlayer player) {
+	public void addPlayer(LGPlayer lgp) {
 
-		if(inGame.contains(player))
-			return;
+		if(inGame.contains(lgp)) return;
 
-		inGame.add(player);
+		inGame.add(lgp);
 
-		player.setGame(this);
+		lgp.setGame(this);
 
-		List<Location> spawns = MainLg.getInstance().getConfig().getLocationList("spawns");
+		if(!spawns.isEmpty()) {
 
-		if(spawns.size() > inGame.size()) {
+			int idx = (inGame.size()-1) % spawns.size();
 
-			player.getPlayer().teleport(spawns.get(inGame.size() - 1));
-
-		} else {
-
-			player.getPlayer().sendMessage("§cAucun spawn disponible pour cette arène !");
+			lgp.getPlayer().teleport(spawns.get(idx));
 
 		}
 
-		broadcastMessage("§a" + player.getName() + " a rejoint la partie (" + inGame.size() + "/" + getMaxPlayers() + ")");
+		broadcast("§a" + lgp.getName() + " a rejoint " + name);
 
 	}
 
@@ -995,7 +1052,7 @@ public class LGGame implements Listener{
 		inGame.remove(player);
 		player.setGame(null);
 
-		broadcastMessage("§c" + player.getName() + " a quitté la partie.");
+		broadcast("§c" + player.getName() + " a quitté la partie.");
 
 	}
 
