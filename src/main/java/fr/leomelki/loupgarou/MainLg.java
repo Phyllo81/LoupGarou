@@ -683,10 +683,87 @@ public class MainLg extends JavaPlugin{
 
 					}
 
+				} else if(args[0].equalsIgnoreCase("createarena")) {
+
+					if(!sender.hasPermission("loupgarou.*"))
+
+					if(!(sender instanceof Player)) {
+
+						sender.sendMessage(prefix+"§4Erreur: §cSeul un joueur peut utiliser cette commande.");
+
+						return true;
+
+					}
+
+					if(args.length < 3) {
+
+						sender.sendMessage(prefix+"§4Erreur: §cCommande incorrecte.");
+						sender.sendMessage(prefix+"§4Essayez §c/lg createarena <nom> <max_players>");
+
+						return true;
+
+					}
+
+					String arenaName = args[1];
+
+					int maxPlayers;
+
+					try {
+
+						maxPlayers = Integer.parseInt(args[2]);
+
+					} catch (NumberFormatException e) {
+
+						sender.sendMessage(prefix+"§4Erreur: §c"+args[3]+" n'est pas un nombre");
+
+						return true;
+
+					}
+
+					LGGameManager manager = MainLg.getInstance().getGameManager();
+
+					if(manager.getMapArenas().containsKey(arenaName)) {
+
+						sender.sendMessage(prefix+"§4Erreur: §cUne arène portant ce nom existe déjà.");
+
+						return true;
+
+					}
+
+					String path = "arenas." + arenaName;
+
+					getConfig().set(path + ".maxPlayers", maxPlayers);
+					getConfig().set(path + ".world", ((Player) sender).getWorld().getName());
+
+					for(String role : getRoles().keySet())
+						getConfig().set(path + ".role." + role, 0);
+
+					saveConfig();
+
+					LGGame newGame = new LGGame(arenaName, maxPlayers);
+					manager.getMapArenas().put(arenaName, newGame);
+
+					sender.sendMessage(prefix+"§aArène " + arenaName + " créée avec succès (" + maxPlayers + " joueurs)");
+
+					return true;
+
+				} else if(args[0].equalsIgnoreCase("reloadarenas")) {
+
+					sender.sendMessage(prefix+"§eRechargement des arènes...");
+
+					reloadConfig();
+
+					getGameManager().loadGames();
+
+					sender.sendMessage(prefix+"§aToutes les arènes ont été rechargées avec succès !");
+
+					return true;
+
 				}
+
 			}
 			sender.sendMessage(prefix+"§4Erreur: §cCommande incorrecte.");
-			sender.sendMessage(prefix+"§4Essayez /lg §caddSpawn/end/start/nextNight/nextDay/reloadConfig/roles/reloadPacks/joinAll/info");
+			sender.sendMessage(prefix+"§4Essayez /lg §caddSpawn/end/start/nextNight/nextDay/reloadConfig/roles/reloadPacks/joinAll/info/createarena/reloadarenas");
 			return true;
 		}
 		return false;
@@ -709,7 +786,7 @@ public class MainLg extends JavaPlugin{
 				if(args.length == 2)
 					return getStartingList(args[1], getRoles().keySet().toArray(new String[getRoles().size()]));
 		}else if(args.length == 1)
-			return getStartingList(args[0], "addSpawn", "end", "start", "nextNight", "nextDay", "reloadConfig", "roles", "joinAll", "reloadPacks", "info");
+			return getStartingList(args[0], "addSpawn", "end", "start", "nextNight", "nextDay", "reloadConfig", "roles", "join", "reloadPacks", "info", "createArena", "reloadArenas");
 		return new ArrayList<String>(0);
 	}
 	private List<String> getStartingList(String startsWith, String... list){
@@ -758,6 +835,8 @@ public class MainLg extends JavaPlugin{
 
 	public void loadConfig() {
 
+		reloadConfig();
+
 		int players = 0;
 
 		if(mode == GameModeType.SINGLE) {
@@ -766,7 +845,7 @@ public class MainLg extends JavaPlugin{
 
 			if(getConfig().isConfigurationSection(base)) {
 
-				for (String role : getConfig().getConfigurationSection(base).getKeys(false)) {
+				for(String role : getConfig().getConfigurationSection(base).getKeys(false)) {
 
 					players += getConfig().getInt(base + "." + role, 0);
 
@@ -776,13 +855,9 @@ public class MainLg extends JavaPlugin{
 
 			currentGame = new LGGame("default", players);
 
-		} else if (mode == GameModeType.MULTI) {
+		} else if(mode == GameModeType.MULTI) {
 
-			gameManager.loadGames();
-
-		} else if (mode == GameModeType.BUNGEE) {
-
-			getLogger().info("Mode Bungee détecté : aucune arène locale chargée.");
+			getGameManager().loadGames();
 
 		}
 

@@ -21,12 +21,39 @@ public class LGGameManager {
 
         for(String name : section.getKeys(false)) {
 
-            int maxPlayers = section.getInt(name + ".maxPlayers", 8);
+            ConfigurationSection arenaSection = section.getConfigurationSection(name);
+
+            if(arenaSection == null) continue;
+
+            int maxPlayers = arenaSection.getInt("maxPlayers", 8);
+
             LGGame game = new LGGame(name, maxPlayers);
+
+            ConfigurationSection rolesSection = arenaSection.getConfigurationSection("roles");
+
+            if(rolesSection != null) {
+
+                for (String roleName : rolesSection.getKeys(false)) {
+
+                    int count = rolesSection.getInt(roleName, 0);
+
+                    game.getRoleDistribution().put(roleName, count);
+
+                }
+
+            }
+
             arenas.put(name, game);
+
             MainLg.getInstance().getLogger().info("✅ Arène chargée : " + name + " (" + maxPlayers + " joueurs)");
 
         }
+
+    }
+
+    public Map<String, LGGame> getMapArenas() {
+
+        return arenas;
 
     }
 

@@ -457,6 +457,16 @@ public class LGGame implements Listener{
 					}
 					broadcast("§2Attribution des rôles...");
 				}
+
+				if(getRoles().isEmpty()) {
+
+					Bukkit.getLogger().warning("§4Erreur: §cAucun rôle défini pour la partie.");
+
+					cancel();
+
+					return;
+
+				}
 				
 				if(--actualRole < 0)
 					actualRole = getRoles().size()-1;
